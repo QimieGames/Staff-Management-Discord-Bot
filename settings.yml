@@ -1,0 +1,26 @@
+ingame_bot:
+  server_ip: ""
+  server_version: ""
+
+discord_bot:
+  guild_id: ""
+  client_id: ""
+  prefix: ""
+
+discord_channels:
+  trials_list: ""
+  trials_changelog: ""
+  trials_voting: ""
+  trials_stats: ""
+  ingame_chat: ""
+
+features:
+  log_ingame_chat: ""
+  console_chat: ""
+
+roles_id:
+  admin: ""
+  trusted: ""
+  changelog_ping: ""
+  voting_ping: ""
+  discussion_ping: ""
