@@ -1,5 +1,9 @@
 require('dotenv').config();
 
+const mineflayer = require('mineflayer');
+
+const DiscordJS = require('discord.js');
+
 const nodeFS = require('fs');
 
 const envDefaultSettings = 
@@ -7,6 +11,8 @@ const envDefaultSettings =
 'DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN\n' +
 'INGAME_BOT_EMAIL=INGAME_BOT_EMAIL\n' +
 'INGAME_BOT_PASSWORD=INGAME_BOT_PASSWORD\n' +
+'AUTH_WAY= microsoft\n' +
+'CONFIG_FILE=./settings/config.json\n' +
 'INDIVIDUAL_STAFF_DIR=./staffs/individual/\n' +
 'STAFFS_LIST_DIR=./staffs/\n' +
 'STAFFS_LIST_FILE=./staffs/list.json';
@@ -32,11 +38,10 @@ const configDefaultSettings =
     },
     
     discord_channels: {
-      trials_list: "",
       trials_changelog: "",
       trials_voting: "",
-      trials_stats: "",
-      ingame_chat: ""
+      ingame_chat: "",
+      bot_commands: ""
     },
     
     features: {
@@ -48,8 +53,7 @@ const configDefaultSettings =
       admin: "",
       trusted: "",
       changelog_ping: "",
-      voting_ping: "",
-      discussion_ping: ""
+      voting_ping: ""
     }
 };
 
@@ -59,9 +63,43 @@ let updatedStaffsList =
     staffs: []
 };
 
+const discordBotIntents = 
+
+[
+    DiscordJS.Intents.FLAGS.GUILD_MEMBERS,
+    DiscordJS.Intents.FLAGS.GUILD_MESSAGES,
+    DiscordJS.Intents.FLAGS.GUILDS
+];
+
+const discordBot = new DiscordJS.Client({intents: discordBotIntents});
+
+const configValue = JSON.parse(nodeFS.readFileSync(process.env.CONFIG_FILE));
+
+const changelogPing = `<@&${configValue.roles_id.changelog_ping}>`;
+
+const votingPing = `<@&${configValue.roles_id.voting_ping}>`;
+
+const discordBotAdmin = configValue.roles_id.admin;
+
+const discordBotTrusted = configValue.roles_id.trusted;
+
+const discordBotGuild = discordBot.guilds.cache.get(configValue.discord_bot.guild_id);
+
+const discordBotPrefix = configValue.discord_bot.prefix;
+
 const validStaffGamemodes = ["Prisons", "Skyblock", "Survival", "Global"];
 
 const validStaffRanks = ["Trials", "Helper", "Mod", "SrMod"];
+
+const ingameBotSettings = 
+
+{
+    host: configValue.ingame_bot.server_ip,
+    username: process.env.INGAME_BOT_EMAIL,
+    password: process.env.INGAME_BOT_PASSWORD,
+    version: configValue.ingame_bot.server_version,
+    auth: process.env.AUTH_WAY
+};
 
 function isFirstTimeRun(){
     try{
@@ -203,4 +241,28 @@ if(isFirstTimeRun() === true){
 } else {
     console.log('[SMDB] Loading staffs list...');
     loadStaffsData();
+    console.log('[SMDB] Connecting to the Discord bot...');
 }
+
+discordBot.login(process.env.DISCORD_BOT_TOKEN);
+
+discordBot.once('ready', () => {
+    console.log('[SMDB] Successfully connected to the Discord bot!');
+    discordBot.user.setActivity(configValue.ingame_bot.server_ip, {type: 'STREAMING', url: 'https://www.twitch.tv/officialqimiegames'});
+    console.log(`[SMDB] Attempting to login to ${configValue.ingame_bot.server_ip}...`);
+});
+
+const ingameBot = mineflayer.createBot(ingameBotSettings);
+
+ingameBot.on('login', () => {
+    console.log(`[SMDB] Successfully logged in to ${configValue.ingame_bot.server_ip}!`);
+});
+
+ingameBot.on('message', chatMSGRaw => {
+    if(configValue.features.console_chat === "true"){
+        console.log(chatMSGRaw.toAnsi());
+    }
+    if(configValue.features.log_ingame_chat === "true"){
+        discordBotGuild.channels.cache.get(configValue.discord_channels.ingame_chat).send('``` ' + chatMSGRaw + ' ```');
+    }
+});

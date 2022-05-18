@@ -1,7 +1,7 @@
 {
   "name": "staff-management-discord-bot",
   "version": "1.0.0",
-  "description": "A simple discord bot to help moderate staff.",
+  "description": "A simple discord bot to help with managing staff.",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,7 +17,8 @@
   },
   "homepage": "https://github.com/QimieGames/Staff-Management-Discord-Bot#readme",
   "dependencies": {
+    "discord.js": "^13.7.0",
     "dotenv": "^16.0.1",
-    "node": "^17.7.2"
+    "mineflayer": "^4.3.0"
   }
 }
