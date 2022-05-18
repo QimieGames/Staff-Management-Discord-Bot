@@ -8,6 +8,7 @@ const envDefaultSettings =
 'INGAME_BOT_EMAIL=INGAME_BOT_EMAIL\n' +
 'INGAME_BOT_PASSWORD=INGAME_BOT_PASSWORD\n' +
 'INDIVIDUAL_STAFF_DIR=./staffs/individual/\n' +
+'STAFFS_LIST_DIR=./staffs/\n' +
 'STAFFS_LIST_FILE=./staffs/list.json';
 
 const staffsListDefaultSettings = 
@@ -60,7 +61,7 @@ let updatedStaffsList =
 
 const validStaffGamemodes = ["Prisons", "Skyblock", "Survival", "Global"];
 
-const validStaffRanks = ["Trials", "Helper", "Mod", "SrMod"]
+const validStaffRanks = ["Trials", "Helper", "Mod", "SrMod"];
 
 function isFirstTimeRun(){
     try{
@@ -98,6 +99,7 @@ function loadStaffsListFile(){
 function createStaffsList(){
     try{
         nodeFS.mkdirSync(process.env.STAFFS_LIST_DIR);
+        nodeFS.mkdirSync(process.env.INDIVIDUAL_STAFF_DIR);
         nodeFS.writeFileSync(process.env.STAFFS_LIST_FILE, JSON.stringify(staffsListDefaultSettings, null, 4), 'utf-8');
         return true;
     } catch {
