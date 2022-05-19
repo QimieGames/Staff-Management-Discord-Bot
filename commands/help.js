@@ -4,8 +4,6 @@ const DiscordJS = require('discord.js');
 
 const nodeFS = require('fs');
 
-const delayCode = require('node:timers/promises').setTimeout;
-
 const configValue = JSON.parse(nodeFS.readFileSync(process.env.CONFIG_FILE));
 
 const discordBotPrefix = configValue.discord_bot.prefix;
