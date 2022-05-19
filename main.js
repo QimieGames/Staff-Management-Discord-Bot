@@ -43,8 +43,7 @@ const configDefaultSettings =
     },
     
     discord_channels: {
-      trials_changelog: "",
-      trials_voting: "",
+      staff_voting: "",
       ingame_chat: "",
       bot_commands: ""
     },
@@ -88,7 +87,7 @@ const discordBotPartials =
 
 const rest = new REST({ version: '9' }).setToken(process.env.DISCORD_BOT_TOKEN);
 
-const discordBot = new DiscordJS.Client({intents: discordBotIntents, partials: discordBotPartials});
+const discordBot = new DiscordJS.Client({ intents: discordBotIntents, partials: discordBotPartials });
 
 discordBot.commands = new DiscordJS.Collection();
 
