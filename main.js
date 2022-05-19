@@ -6,12 +6,17 @@ const DiscordJS = require('discord.js');
 
 const nodeFS = require('fs');
 
+const { REST } = require('@discordjs/rest');
+
+const { Routes } = require('discord-api-types/v9');
+
 const envDefaultSettings = 
 
 'DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN\n' +
 'INGAME_BOT_EMAIL=INGAME_BOT_EMAIL\n' +
 'INGAME_BOT_PASSWORD=INGAME_BOT_PASSWORD\n' +
 'AUTH_WAY= microsoft\n' +
+'COMMANDS_DIR=./commands/\n' +
 'CONFIG_FILE=./settings/config.json\n' +
 'INDIVIDUAL_STAFF_DIR=./staffs/individual/\n' +
 'STAFFS_LIST_DIR=./staffs/\n' +
@@ -71,25 +76,29 @@ const discordBotIntents =
     DiscordJS.Intents.FLAGS.GUILDS
 ];
 
-const discordBot = new DiscordJS.Client({intents: discordBotIntents});
+const discordBotPartials =
+
+[
+    'CHANNEL',
+    'GUILD_MEMBER',
+    'REACTION',
+    'MESSAGE',
+    'USER'
+];
+
+const rest = new REST({ version: '9' }).setToken(process.env.DISCORD_BOT_TOKEN);
+
+const discordBot = new DiscordJS.Client({intents: discordBotIntents, partials: discordBotPartials});
+
+discordBot.commands = new DiscordJS.Collection();
+
+let commandType;
+
+let commands = [];
 
 const configValue = JSON.parse(nodeFS.readFileSync(process.env.CONFIG_FILE));
 
-const changelogPing = `<@&${configValue.roles_id.changelog_ping}>`;
-
-const votingPing = `<@&${configValue.roles_id.voting_ping}>`;
-
-const discordBotAdmin = configValue.roles_id.admin;
-
-const discordBotTrusted = configValue.roles_id.trusted;
-
-const discordBotGuild = discordBot.guilds.cache.get(configValue.discord_bot.guild_id);
-
 const discordBotPrefix = configValue.discord_bot.prefix;
-
-const validStaffGamemodes = ["Prisons", "Skyblock", "Survival", "Global"];
-
-const validStaffRanks = ["Trials", "Helper", "Mod", "SrMod"];
 
 const ingameBotSettings = 
 
@@ -100,6 +109,17 @@ const ingameBotSettings =
     version: configValue.ingame_bot.server_version,
     auth: process.env.AUTH_WAY
 };
+
+const commandsPath = `${process.env.COMMANDS_DIR}`;
+
+const commandFiles = nodeFS.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
+for (const file of commandFiles) {
+	const filePath = `${commandsPath}${file}`;
+	const command = require(filePath);
+    commands.push(command.data.toJSON());
+	discordBot.commands.set(command.data.name, command);
+}
 
 function isFirstTimeRun(){
     try{
@@ -246,6 +266,10 @@ if(isFirstTimeRun() === true){
 
 discordBot.login(process.env.DISCORD_BOT_TOKEN);
 
+rest.put(Routes.applicationGuildCommands(configValue.discord_bot.client_id, configValue.discord_bot.guild_id), { body: commands })
+	.then(() => console.log('[SMDB] Successfully synced slash commands!'))
+	.catch(console.error);
+
 discordBot.once('ready', () => {
     console.log('[SMDB] Successfully connected to the Discord bot!');
     discordBot.user.setActivity(configValue.ingame_bot.server_ip, {type: 'STREAMING', url: 'https://www.twitch.tv/officialqimiegames'});
@@ -263,6 +287,68 @@ ingameBot.on('message', chatMSGRaw => {
         console.log(chatMSGRaw.toAnsi());
     }
     if(configValue.features.log_ingame_chat === "true"){
-        discordBotGuild.channels.cache.get(configValue.discord_channels.ingame_chat).send('``` ' + chatMSGRaw + ' ```');
+        discordBot.channels.cache.get(configValue.discord_channels.ingame_chat).send('``` ' + chatMSGRaw + ' ```');
+    }
+});
+
+discordBot.on('interactionCreate', async interaction => {
+
+    const discordSlashCommand = discordBot.commands.get(interaction.commandName);
+
+	if (!interaction.isCommand() || !discordSlashCommand) return;
+
+    commandType = "Slash";
+
+	try {
+		await discordSlashCommand.execute(interaction, commandType);
+	} catch {
+		await interaction.reply({ content: '```Error occured while executing this command!```', ephemeral: true });
+	}
+});
+
+discordBot.on('messageCreate', discordMessage => {
+
+    const args = discordMessage.content.slice(discordBotPrefix.length).split(/ +/);
+
+    const discordCommand = args.shift().toLocaleLowerCase();
+
+    if(!discordMessage.content.startsWith(discordBotPrefix) || discordMessage.author.bot || discordCommand === "") return;
+
+    commandType = "Message";
+
+    switch(discordCommand){
+        default:
+            discordMessage.reply('```Invalid Command. Do ' + discordBotPrefix + 'help for list of commands.```');
+            break;
+        case 'help':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            break;
+        case 'restart':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            break;
+        case 'sudo':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            break;
+        case 'removestaff':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            break;
+        case 'editstaff':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            break;
+        case 'addstaff':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            break;
+        case 'demote':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            break;
+        case 'promote':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            break;
+        case 'vote':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            break;
+        case 'staffstats':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            break;
     }
 });
