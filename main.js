@@ -44,8 +44,7 @@ const configDefaultSettings =
     
     discord_channels: {
       staff_voting: "",
-      ingame_chat: "",
-      bot_commands: ""
+      ingame_chat: ""
     },
     
     features: {
@@ -261,9 +260,8 @@ if(isFirstTimeRun() === true){
     console.log('[SMDB] Loading staffs list...');
     loadStaffsData();
     console.log('[SMDB] Connecting to the Discord bot...');
+    discordBot.login(process.env.DISCORD_BOT_TOKEN);
 }
-
-discordBot.login(process.env.DISCORD_BOT_TOKEN);
 
 rest.put(Routes.applicationGuildCommands(configValue.discord_bot.client_id, configValue.discord_bot.guild_id), { body: commands })
 	.then(() => console.log('[SMDB] Successfully synced slash commands!'))
@@ -271,13 +269,23 @@ rest.put(Routes.applicationGuildCommands(configValue.discord_bot.client_id, conf
 
 discordBot.once('ready', () => {
     console.log('[SMDB] Successfully connected to the Discord bot!');
-    discordBot.user.setActivity(configValue.ingame_bot.server_ip, {type: 'STREAMING', url: 'https://www.twitch.tv/officialqimiegames'});
     console.log(`[SMDB] Attempting to login to ${configValue.ingame_bot.server_ip}...`);
 });
 
 const ingameBot = mineflayer.createBot(ingameBotSettings);
 
-ingameBot.on('login', () => {
+ingameBot.on('error', errorMSG => {
+    console.log(errorMSG);
+    process.exit(0);
+});
+
+ingameBot.on('kicked', errorMSG => {
+    console.log(errorMSG);
+    process.exit(0);
+});
+
+ingameBot.on('spawn', () => {
+    discordBot.user.setActivity(configValue.ingame_bot.server_ip, {type: 'STREAMING', url: 'https://www.twitch.tv/officialqimiegames'});
     console.log(`[SMDB] Successfully logged in to ${configValue.ingame_bot.server_ip}!`);
 });
 
@@ -291,15 +299,15 @@ ingameBot.on('message', chatMSGRaw => {
 });
 
 discordBot.on('interactionCreate', async interaction => {
-
     const discordSlashCommand = discordBot.commands.get(interaction.commandName);
-
 	if (!interaction.isCommand() || !discordSlashCommand) return;
-
     commandType = "Slash";
-
 	try {
-		await discordSlashCommand.execute(interaction, commandType);
+        if(interaction.commandName === 'staffstats' || interaction.commandName === 'chat' || interaction.commandName === 'restart'){
+		    await discordSlashCommand.execute(interaction, commandType, null, ingameBot);
+        } else {
+            await discordSlashCommand.execute(interaction, commandType);
+        }
 	} catch {
 		await interaction.reply({ content: '```Error occured while executing this command!```', ephemeral: true });
 	}
@@ -323,10 +331,10 @@ discordBot.on('messageCreate', discordMessage => {
             discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
             break;
         case 'restart':
-            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args, ingameBot);
             break;
         case 'sudo':
-            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args, ingameBot);
             break;
         case 'removestaff':
             discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
@@ -347,7 +355,10 @@ discordBot.on('messageCreate', discordMessage => {
             discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
             break;
         case 'staffstats':
-            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args);
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args, ingameBot);
+            break;
+        case 'chat':
+            discordBot.commands.get(`${discordCommand}`).execute(discordMessage, commandType, args, ingameBot);
             break;
     }
 });
