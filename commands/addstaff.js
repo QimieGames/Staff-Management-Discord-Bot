@@ -8,11 +8,9 @@ const discordBotAdmin = configValue.roles_id.admin;
 
 const discordBotPrefix = configValue.discord_bot.prefix;
 
-const validStaffGamemodes = ["Global", "Prisons", "Skyblock", "Survival"];
+const validStaffGamemodes = ["Global", "Prison", "Skyblock", "Survival"];
 
 const validStaffRanks = ["Trials", "Helper", "Mod", "SrMod"];
-
-let staffsList = JSON.parse(nodeFS.readFileSync(process.env.STAFFS_LIST_FILE));
 
 let updatedStaffsList = 
 
@@ -25,6 +23,9 @@ function updateStaffList(){
 }
 
 function addNewStaff(staffIGN, staffGamemode, staffRank){
+
+    const staffsList = JSON.parse(nodeFS.readFileSync(process.env.STAFFS_LIST_FILE));
+
     const newStaffData = 
 
         {
@@ -60,7 +61,7 @@ module.exports = {
             .setDescription('Staff Gamemode.')
             .setRequired(true)
             .addChoices({ 'name': 'Global', 'value': 'Global' })
-            .addChoices({ 'name': 'Prisons', 'value': 'Prisons' })
+            .addChoices({ 'name': 'Prison', 'value': 'Prison' })
             .addChoices({ 'name': 'Skyblock', 'value': 'Skyblock' })
             .addChoices({ 'name': 'Survival', 'value': 'Survival' }))
         .addStringOption(option => 
@@ -74,12 +75,13 @@ module.exports = {
 		
 	async execute(interaction, commandType, args) {
         if(commandType === "Slash"){
-            const staffIGN = interaction.options.getString('ign');
-            const staffRank = interaction.options.getString('rank');
-            const staffGamemode = interaction.options.getString('gamemode');
                 if(interaction.member.roles.cache.some(r => r.id === discordBotAdmin) === true){
+                    const staffIGN = interaction.options.getString('ign');
+                    const staffsList = JSON.parse(nodeFS.readFileSync(process.env.STAFFS_LIST_FILE));
                     if(staffsList.staffs.includes(`${staffIGN}`) === false){
+                        const staffGamemode = interaction.options.getString('gamemode');
                         if(validStaffGamemodes.includes(staffGamemode) === true){
+                            const staffRank = interaction.options.getString('rank');
                             if(staffRank){
                                 if(validStaffRanks.includes(`${staffRank}`) === true){
                                     if(addNewStaff(staffIGN, staffGamemode, staffRank) === true){
@@ -98,7 +100,7 @@ module.exports = {
                                 }
                             }
                         } else {
-                            interaction.reply({ content: '```Invalid Gamemode. Gamemodes: Global/Prisons/Skyblock/Survival```', ephemeral: true });
+                            interaction.reply({ content: '```Invalid Gamemode. Gamemodes: Global/Prison/Skyblock/Survival```', ephemeral: true });
                         }
                     } else {
                         interaction.reply({ content: '```' + `${args[0]}` + ' is already on the staff team.```', ephemeral: true });
@@ -109,6 +111,7 @@ module.exports = {
         } else if(commandType === "Message"){
             if(args[1] && !args[3]){
                 if(interaction.member.roles.cache.some(r => r.id === discordBotAdmin) === true){
+                    const staffsList = JSON.parse(nodeFS.readFileSync(process.env.STAFFS_LIST_FILE));
                     if(staffsList.staffs.includes(`${args[0]}`) === false){
                         if(validStaffGamemodes.includes(args[1]) === true){
                             if(args[2]){
@@ -129,7 +132,7 @@ module.exports = {
                                 }
                             }
                         } else {
-                            interaction.reply('```Invalid Gamemode. Gamemodes: Global/Prisons/Skyblock/Survival```');
+                            interaction.reply('```Invalid Gamemode. Gamemodes: Global/Prison/Skyblock/Survival```');
                         }
                     } else {
                         interaction.reply('```' + `${args[0]}` + ' is already on the staff team.```');

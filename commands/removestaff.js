@@ -8,8 +8,6 @@ const discordBotAdmin = configValue.roles_id.admin;
 
 const discordBotPrefix = configValue.discord_bot.prefix;
 
-let staffsList = JSON.parse(nodeFS.readFileSync(process.env.STAFFS_LIST_FILE));
-
 let updatedStaffsList = 
 
 {
@@ -57,6 +55,7 @@ module.exports = {
         if(commandType === "Slash"){
             if(interaction.member.roles.cache.some(r => r.id === discordBotAdmin) === true){
                 const ingameName = interaction.options.getString('ign');
+                const staffsList = JSON.parse(nodeFS.readFileSync(process.env.STAFFS_LIST_FILE));
                 if(staffsList.staffs.includes(`${ingameName}`) === true){
                     if(removeStaffIndividualFile(ingameName) === true){
                         loadIndividualStaffFile();
@@ -73,6 +72,7 @@ module.exports = {
         } else if(commandType === "Message"){
             if(args[0] && !args[1]){
                 if(interaction.member.roles.cache.some(r => r.id === discordBotAdmin) === true){
+                    const staffsList = JSON.parse(nodeFS.readFileSync(process.env.STAFFS_LIST_FILE));
                     if(staffsList.staffs.includes(`${args[0]}`) === true){
                         if(removeStaffIndividualFile(args[0]) === true){
                             loadIndividualStaffFile();
